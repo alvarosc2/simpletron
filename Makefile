@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -g
+CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -g -O0
 LDLIBS ?= -lncurses
 
 TARGET := simpletron

@@ -61,7 +61,8 @@ void display_registers()
     printf("instructionCounter %2d\n", cpu_regs.instructionCounter);
     printf("instructionRegister %+4.4d\n", cpu_regs.instructionRegister);
     printf("operationCode %2d\n", cpu_regs.operationCode);
-    printf("operand %2d\n\n", cpu_regs.operand);
+    printf("operand %2d\n", cpu_regs.operand);
+    printf("haltSignal %2d\n\n", cpu_regs.halt);
 }
 
 void display_memory()
@@ -123,6 +124,7 @@ void reset_cpu()
     cpu_regs.instructionRegister = 0;
     cpu_regs.operand = 0;
     cpu_regs.operationCode = 0;
+    cpu_regs.halt = 0;
 }
 
 void fetch()
@@ -141,16 +143,19 @@ void execute()
     switch (cpu_regs.operationCode)
     {
     case READ:
+        printf("Input:\n");
+        printf("> ");
         scanf("%d", &mem[cpu_regs.operand]);
         break;
     case WRITE:
+        printf("Output:\n");
         printf("%d\n", mem[cpu_regs.operand]);
         break;
     case LOAD:
         cpu_regs.accumulator = cpu_regs.operand;
         break;
     case STORE:
-        mem[cpu_regs.instructionCounter] = cpu_regs.accumulator;
+        mem[cpu_regs.operand] = cpu_regs.accumulator;
         break;
     case ADD:
         cpu_regs.accumulator += cpu_regs.operand;
@@ -187,6 +192,8 @@ void execute()
     default:
         break;
     }
+
+    cpu_regs.instructionCounter++;
 }
 
 void execution_cycle()
@@ -222,7 +229,7 @@ void UI()
     endwin(); // restaura la terminal (¡siempre!)
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     display_intro();
     line_editor();
