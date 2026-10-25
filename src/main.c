@@ -1,5 +1,7 @@
-#include <ncurses.h>
+#include "config.h"
 #include <stdio.h>
+#include <stdbool.h>
+#include <SDL2/SDL.h>
 
 #define MEMLEN 100
 
@@ -130,6 +132,7 @@ void reset_cpu()
 void fetch()
 {
     cpu_regs.instructionRegister = mem[cpu_regs.instructionCounter];
+    cpu_regs.instructionCounter++;
 }
 
 void decode()
@@ -152,22 +155,22 @@ void execute()
         printf("%d\n", mem[cpu_regs.operand]);
         break;
     case LOAD:
-        cpu_regs.accumulator = cpu_regs.operand;
+        cpu_regs.accumulator = mem[cpu_regs.operand];
         break;
     case STORE:
         mem[cpu_regs.operand] = cpu_regs.accumulator;
         break;
     case ADD:
-        cpu_regs.accumulator += cpu_regs.operand;
+        cpu_regs.accumulator += mem[cpu_regs.operand];
         break;
     case SUBSTRACT:
-        cpu_regs.accumulator -= cpu_regs.operand;
+        cpu_regs.accumulator -= mem[cpu_regs.operand];
         break;
     case DIVIDE:
-        cpu_regs.accumulator /= cpu_regs.operand;
+        cpu_regs.accumulator /= mem[cpu_regs.operand];
         break;
     case MULTIPLY:
-        cpu_regs.accumulator *= cpu_regs.operand;
+        cpu_regs.accumulator *= mem[cpu_regs.operand];
         break;
     case BRANCH:
         cpu_regs.instructionCounter = cpu_regs.operand;
@@ -192,8 +195,6 @@ void execute()
     default:
         break;
     }
-
-    cpu_regs.instructionCounter++;
 }
 
 void execution_cycle()
@@ -210,23 +211,41 @@ void execution_cycle()
 
 void UI()
 {
-    initscr();            // entra en modo curses
-    cbreak();             // teclas sin esperar Enter
-    noecho();             // no imprime lo que tecleas
-    keypad(stdscr, TRUE); // flechas, F1..F12
+    SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_Window *window = SDL_CreateWindow(
+        EMULATOR_WINDOW_TITLE,
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        WINDOW_WIDTH * WINDOW_MULTIPLIER,
+        WINDOW_HEIGHT * WINDOW_MULTIPLIER,
+        SDL_WINDOW_SHOWN);
 
-    WINDOW *regs = newwin(8, 30, 0, 0); // alto, ancho, y, x
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_TEXTUREACCESS_TARGET);
+    while (1)
+    {
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT)
+            {
+                goto out;
+            }
+        }
 
-    box(regs, 0, 0);
-    mvwprintw(regs, 0, 2, " SIMPLETRON ");
-    mvwprintw(regs, 1, 2, "accumulator: %+05d", 0);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+        SDL_RenderClear(renderer);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
+        SDL_Rect r;
+        r.x = 0;
+        r.y = 0;
+        r.w = 40;
+        r.h = 40;
+        SDL_RenderFillRect(renderer, &r);
+        SDL_RenderPresent(renderer);
+    }
 
-    refresh();      // refresca stdscr primero
-    wrefresh(regs); // luego cada ventana
-
-    getch(); // espera una tecla
-    delwin(regs);
-    endwin(); // restaura la terminal (¡siempre!)
+out:
+    SDL_DestroyWindow(window);
 }
 
 int main(int argc, char *argv[])
